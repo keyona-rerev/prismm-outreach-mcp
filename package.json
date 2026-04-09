@@ -1,18 +1,14 @@
 {
   "name": "prismm-outreach-mcp",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "express": "^5.2.1",
-    "googleapis": "^171.4.0"
+    "@modelcontextprotocol/sdk": "latest",
+    "googleapis": "latest",
+    "express": "latest",
+    "zod": "latest"
   }
 }

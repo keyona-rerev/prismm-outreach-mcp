@@ -66,4 +66,28 @@ app.post("/mcp", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
+app.get("/oauth/start", (req, res) => {
+  const client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+  const url = client.generateAuthUrl({
+    access_type: "offline",
+    prompt: "consent",
+    scope: ["https://www.googleapis.com/auth/gmail.compose"],
+  });
+  res.redirect(url);
+});
+
+app.get("/oauth/callback", async (req, res) => {
+  const client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+  const { tokens } = await client.getToken(req.query.code);
+  console.log("GOOGLE_TOKENS:", JSON.stringify(tokens));
+  res.send("Auth complete. Copy the token from Railway deploy logs.");
+});
 app.listen(PORT, () => console.log(`Prismm Outreach MCP running on port ${PORT}`));
