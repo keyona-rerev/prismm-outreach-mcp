@@ -50,7 +50,13 @@ app.get("/oauth/callback", async (req, res) => {
   }
 });
 
-app.all("/mcp", async (req, res) => {
+// GET /mcp - discovery ping from Claude.ai
+app.get("/mcp", (req, res) => {
+  res.status(200).json({ status: "ok", name: "prismm-outreach" });
+});
+
+// POST /mcp - actual MCP protocol handler
+app.post("/mcp", async (req, res) => {
   const server = new McpServer({ name: "prismm-outreach", version: "1.0.0" });
 
   server.tool(
