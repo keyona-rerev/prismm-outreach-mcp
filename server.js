@@ -94,11 +94,25 @@ mcpServer.tool(
         ``,
         `--${boundary}--`,
       ].join("\n");
-    } else {
-      headers.push(`Content-Type: text/plain; charset=utf-8`);
-      messageBody = body;
-    }
-
+  } else {
+  const autoHtml = body.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  const boundary = `----=_Part_${Date.now()}`;
+  headers.push(`MIME-Version: 1.0`);
+  headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+  messageBody = [
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=utf-8`,
+    ``,
+    body,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=utf-8`,
+    ``,
+    autoHtml,
+    ``,
+    `--${boundary}--`,
+  ].join("\n");
+}
     const message = [...headers, ``, messageBody].join("\n");
 
     const encoded = Buffer.from(message)
