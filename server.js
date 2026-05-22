@@ -65,28 +65,59 @@ app.post("/mcp", async (req, res) => {
     {
       to: z.string().describe("Recipient email address"),
       subject: z.string().describe("Email subject"),
-      body: z.string().describe("Email body in plain text"),
+      body: z.string().describe("Plain text email body (fallback when htmlBody is also provided)"),
+      htmlBody: z.string().optional().describe("HTML email body — if provided, email renders as HTML with plain text fallback"),
+      bcc: z.string().optional().describe("BCC email address (e.g. prismm@pipedrivemail.com for Pipedrive logging)"),
     },
-    async ({ to, subject, body }) => {
+    async ({ to, subject, body, htmlBody, bcc }) => {
       const auth = getOAuthClient();
       const gmail = google.gmail({ version: "v1", auth });
-      const message = [
+
+      const headers = [
         `From: Keyona Meeks <keyona@getprismm.com>`,
         `To: ${to}`,
         `Subject: ${subject}`,
-        `Content-Type: text/plain; charset=utf-8`,
-        ``,
-        body,
-      ].join("\n");
+      ];
+
+      if (bcc) headers.push(`Bcc: ${bcc}`);
+
+      let messageBody;
+
+      if (htmlBody) {
+        const boundary = `----=_Part_${Date.now()}`;
+        headers.push(`MIME-Version: 1.0`);
+        headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+        messageBody = [
+          `--${boundary}`,
+          `Content-Type: text/plain; charset=utf-8`,
+          ``,
+          body,
+          ``,
+          `--${boundary}`,
+          `Content-Type: text/html; charset=utf-8`,
+          ``,
+          htmlBody,
+          ``,
+          `--${boundary}--`,
+        ].join("\n");
+      } else {
+        headers.push(`Content-Type: text/plain; charset=utf-8`);
+        messageBody = body;
+      }
+
+      const message = [...headers, ``, messageBody].join("\n");
+
       const encoded = Buffer.from(message)
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
         .replace(/=+$/, "");
+
       await gmail.users.drafts.create({
         userId: "me",
         requestBody: { message: { raw: encoded } },
       });
+
       return {
         content: [{ type: "text", text: `Draft created in Prismm Outreach for ${to}` }],
       };
