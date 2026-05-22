@@ -18,6 +18,8 @@ function getOAuthClient() {
   return client;
 }
 
+app.get("/health", (req, res) => res.send("OK"));
+
 app.get("/oauth/start", (req, res) => {
   const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -48,7 +50,7 @@ app.get("/oauth/callback", async (req, res) => {
   }
 });
 
-app.post("/mcp", async (req, res) => {
+app.all("/mcp", async (req, res) => {
   const server = new McpServer({ name: "prismm-outreach", version: "1.0.0" });
 
   server.tool(
@@ -62,7 +64,6 @@ app.post("/mcp", async (req, res) => {
     async ({ to, subject, body }) => {
       const auth = getOAuthClient();
       const gmail = google.gmail({ version: "v1", auth });
-
       const message = [
         `From: Keyona Meeks <keyona@getprismm.com>`,
         `To: ${to}`,
@@ -71,18 +72,15 @@ app.post("/mcp", async (req, res) => {
         ``,
         body,
       ].join("\n");
-
       const encoded = Buffer.from(message)
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
         .replace(/=+$/, "");
-
       await gmail.users.drafts.create({
         userId: "me",
         requestBody: { message: { raw: encoded } },
       });
-
       return {
         content: [{ type: "text", text: `Draft created in Prismm Outreach for ${to}` }],
       };
